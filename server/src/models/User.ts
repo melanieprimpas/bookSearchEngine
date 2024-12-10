@@ -6,7 +6,7 @@ import bookSchema from './Book.js';
 import type { BookDocument } from './Book.js';
 
 export interface UserDocument extends Document {
-  id: string;
+  _id: string;
   username: string;
   email: string;
   password: string;
@@ -33,7 +33,10 @@ const userSchema = new Schema<UserDocument>(
       required: true,
     },
     // set savedBooks to be an array of data that adheres to the bookSchema
-    savedBooks: [bookSchema],
+    savedBooks: {
+      type: [bookSchema],
+      default: []
+    }
   },
   // set this to use virtual below
   {
@@ -48,6 +51,7 @@ userSchema.pre('save', async function (next) {
   if (this.isNew || this.isModified('password')) {
     const saltRounds = 10;
     this.password = await bcrypt.hash(this.password, saltRounds);
+    console.log("Password has been hashed")
   }
 
   next();
