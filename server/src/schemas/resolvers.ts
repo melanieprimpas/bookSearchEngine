@@ -8,65 +8,76 @@ interface User {
   username: string;
   email: string;
   password: string;
-  books: BookDocument[];
+  savedBooks: BookDocument[];
 }
 
 interface UserArgs {
-  userId: string;
+  id: string;
+  username: string;
 }
 
 interface AddUserArgs {
-  name: string;
+  input:{
+    username: string;
+    email: string;
+    password: string;
+  }
 }
 
 interface AddBookArgs {
-  userId: string;
-  book: BookDocument;
+  input: {  
+    authors: string[];
+    description: string;
+    title: string;
+    bookId: string;
+    image: string;
+    link: string;
+  }
 }
 
 interface RemoveBookArgs {
-  userId: string;
-  book: BookDocument;
+  bookId: string;
+  //book: BookDocument;
 }
 
 interface Context {
-  user?: User; // Optional user profile in context
+  user?: User; 
 }
 
 const resolvers = {
   Query: {
-    users: async () => {
-      try {
-        // Populate the savedBooks subdocument when querying for users
-        return await User.find({}).populate('savedBooks');
-      } catch (error) {
-        console.error('Error fetching user data: ', error);
-        throw new Error('Failed to fetch user data');
+    //get single user
+    me: async (_parent: any, {id, username}: UserArgs, context: Context) => {
+      if (!context.user) {
+        throw AuthenticationError;
       }
-    },
-    user: async (_parent: unknown, { userId }: UserArgs) => {
-      try {
-        // Populate the savedBooks subdocument when querying for user
-        return await User.findOne({ _id: userId }).populate('savedBooks');
-      } catch (error) {
-        console.error('Error fetching user data: ', error);
-        throw new Error('Failed to fetch user data');
-      } 
-    },
-    me: async (_parent: any, _args: any, context: Context): Promise<User | null> => {
-      if (context.user) {
-        return await User.findOne({ _id: context.user._id });
+
+      const foundUser = await User.findOne({
+        $or: [ { _id: id }, { username }]
+      });
+
+      if (!foundUser) {
+        throw new Error('Cannot find user with that id or username.')
       }
-      throw AuthenticationError;
+      return foundUser
+      
     },
   },
   Mutation: {
-    createUser: async (_parent: unknown, { name }: AddUserArgs) => {
-      return await User.create({ name });
+    addUser: async (_parent: any, { input }: AddUserArgs): Promise<{ token: string; user: User }> => {
+      try {
+      // Check if the user already exists
+        const user = await User.create({ ...input });
+        const token = signToken(user.username, user.email, user._id);
+        return { token, user } 
+      } catch (error) {
+        throw new Error('Could not create user.')
+      }
+  
     },
-    login: async (_parent: unknown, { username, password }: { username: string; password: string }): Promise<{ token: string; user: User }> => {
+    login: async (_parent: unknown, { email, password }: { email: string; password: string }) => {
       // Find a user by email
-      const user = await User.findOne({ username });
+      const user = await User.findOne({ email });
 
       if (!user) {
         // If profile with provided email doesn't exist, throw an authentication error
@@ -86,31 +97,31 @@ const resolvers = {
       return { token, user };
     },
     // Add a third argument to the resolver to access data in our `context`
-    addBook: async (_parent: unknown, { userId, book }: AddBookArgs, context: Context): Promise<User | null> => {
+    saveBook: async (_parent: any, { input }: AddBookArgs, context: Context) => {
       // If context has a `user` property, that means the user executing this mutation has a valid JWT and is logged in
       if (context.user) {
         // Add a skill to a profile identified by profileId
-        return await User.findOneAndUpdate(
-          { _id: userId },
-          {
-            $addToSet: { books: book },
-          },
-          {
-            new: true,
-            runValidators: true,
-          }
-        );
+        try {
+          return await User.findOneAndUpdate(
+            { _id: context.user._id },
+            { $addToSet: { savedBooks: input } },
+            { new: true, runValidators: true }
+          ); 
+        } catch (error) {
+          throw new Error('Could not add book to user.')
+        }
+ 
       }
       // If user attempts to execute this mutation and isn't logged in, throw an error
       throw new AuthenticationError('Could not find user');
     },
     // Make it so a logged in user can only remove a skill from their own profile
-    removeBook: async (_parent: unknown, { book }: RemoveBookArgs, context: Context): Promise<User | null> => {
+    removeBook: async (_parent: unknown, { bookId }: RemoveBookArgs, context: Context): Promise<User | null> => {
       if (context.user) {
         // If context has a `user` property, remove a skill from the profile of the logged-in user
         return await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $pull: { books: book } },
+          { $pull: { savedBooks: bookId } },
           { new: true }
         );
       }
