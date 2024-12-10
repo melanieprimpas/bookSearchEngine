@@ -40,8 +40,9 @@ const SignupForm = ({}: { handleModalClose: () => void }) => {
     }
 
     try {
+      const { username, email, password } = userFormData; 
       const { data } = await addUser({
-        variables: { ...userFormData }
+        variables: { input: { username, email, password }}
       });
 
       if (!data) {
