@@ -3,13 +3,18 @@ import { gql } from '@apollo/client';
 export const SAVE_BOOK = gql`
  mutation saveBook($input: BookInput!) {
     saveBook(input: $input) {
-      authors
-      description
-      title
-      bookId
-      image
-      link
-    
+      _id
+      username
+      email
+      bookCount
+      savedBooks {
+        bookId
+        authors
+        description
+        title
+        image
+        link
+      }
     }
   }
 `;
