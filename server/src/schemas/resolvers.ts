@@ -104,11 +104,9 @@ const resolvers = {
     // Add a third argument to the resolver to access data in our `context`
     saveBook: async (_parent: any, { input }: AddBookArgs, context: Context) => {
       // If context has a `user` property, that means the user executing this mutation has a valid JWT and is logged in
-      console.log("resolver hit")
-      console.log(input, "Line 108")
+
       if (context.user) {
-        console.log(context.user, "context.user")
-        console.log(context.user._id, "context.user._id")
+
         // Add a skill to a profile identified by profileId
         try {
           console.log('trying to update')
@@ -127,11 +125,12 @@ const resolvers = {
     },
     // Make it so a logged in user can only remove a skill from their own profile
     removeBook: async (_parent: unknown, { bookId }: RemoveBookArgs, context: Context): Promise<User | null> => {
+  
       if (context.user) {
         // If context has a `user` property, remove a skill from the profile of the logged-in user
         return await User.findOneAndUpdate(
           { _id: context.user._id },
-          { $pull: { savedBooks: bookId } },
+          { $pull: { savedBooks: { bookId } } },
           { new: true }
         );
       }
