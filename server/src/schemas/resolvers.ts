@@ -48,9 +48,14 @@ const resolvers = {
   Query: {
     //get single user
     me: async (_parent: any, {id, username}: UserArgs, context: Context) => {
+      console.log(id)
+      console.log(context.user)
       if (!context.user) {
         throw AuthenticationError;
       }
+
+      id = context.user._id;
+      username = context.user.username;
 
       const foundUser = await User.findOne({
         $or: [ { _id: id }, { username }]
@@ -99,13 +104,18 @@ const resolvers = {
     // Add a third argument to the resolver to access data in our `context`
     saveBook: async (_parent: any, { input }: AddBookArgs, context: Context) => {
       // If context has a `user` property, that means the user executing this mutation has a valid JWT and is logged in
+      console.log("resolver hit")
+      console.log(input, "Line 108")
       if (context.user) {
+        console.log(context.user, "context.user")
+        console.log(context.user._id, "context.user._id")
         // Add a skill to a profile identified by profileId
         try {
+          console.log('trying to update')
           return await User.findOneAndUpdate(
             { _id: context.user._id },
             { $addToSet: { savedBooks: input } },
-            { new: true, runValidators: true }
+            { new: true }
           ); 
         } catch (error) {
           throw new Error('Could not add book to user.')

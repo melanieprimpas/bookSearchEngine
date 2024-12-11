@@ -31,7 +31,7 @@ const LoginForm = ({}: { handleModalClose: () => void }) => {
       event.preventDefault();
       event.stopPropagation();
     }
-
+    
     try {
       const { data } = await login({
         variables: { ...userFormData }
