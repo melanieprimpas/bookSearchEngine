@@ -7,8 +7,8 @@ The functionality of the application is to be able to login/sign up and search f
 
 ## Screenshot
 ![Search Page](client/public/assets/Screenshot1.png)
-![SavedBooks Page 1](client/public/assets/Screenshot2.png)
-![SavedBooks Page 2](client/public/assets/Screenshot3.png)
+![SavedBooks Page 1](client/public/assets/Screenshot3.png)
+![SavedBooks Page 2](client/public/assets/Screenshot2.png)
 
 ## Link to Deployed App
 https://booksearchengine-xf3f.onrender.com
